@@ -1,0 +1,86 @@
+//toll system
+
+//defining libraries
+#include<Servo.h> //include librabry for servo motor
+#include<LiquidCrystal.h> //include library for 16*2 lcd display
+#include <SoftwareSerial.h> // include library for bluetooth module
+#define txd 3 // pin declaration of transmitter of bluetooth module
+#define rxd 2 //pin declartion of receiver of bluetooth module
+
+Servo my_motor; //object of library servo
+
+//pin configuration and variable declarations
+int redled=12;
+const int trigpin=4;
+const int echopin=5;
+long distance,duration;
+char c;
+int rs=6;
+int En=7;
+int D4=8;
+int D5=10;
+int D6=11;
+int D7=13;
+LiquidCrystal lcd(rs,En,D4,D5,D6,D7);
+SoftwareSerial bluetooth(txd,rxd);
+
+
+void setup()
+{
+my_motor.attach(9); //it will tell the servo motor that signal pin of motor is c
+onnected to digital pin 9 of arduino
+my_motor.write(0); //tells the total rotation of servo motor
+pinMode(redled,OUTPUT);
+pinMode(echopin,INPUT);
+pinMode(trigpin,OUTPUT);
+lcd.begin(16,2);
+lcd.setCursor(0,0);
+lcd.print("welcome to toll");
+lcd.setCursor(4,1);
+lcd.print("plaza");
+Serial.begin(9600);
+bluetooth.begin(9600);
+}
+
+void loop()
+{
+/* in ultrasonic sensor we have to set the trig pin high for 10 micro seconds
+so first we will put trig pin low for 2 micro seconds and then put it high for
+10 micro seconds*/
+digitalWrite(trigpin,LOW);
+delayMicroseconds(2);
+digitalWrite(trigpin,HIGH);
+delayMicroseconds(10);
+digitalWrite(trigpin,LOW);
+duration=pulseIn(echopin,HIGH); //it means the pulse function will get total duration time of echo pin
+// speed of sound on room temp=343.5 m/s
+//speed of temp at room temp=0.03435 cm/microsec
+// total distance=total duration*0.03435 this is the total distance of sound wave from going to object and then return back to sensor
+// so to find only distance of object from sensor we have to divide the duration by 2
+// distance from sensor to object=(total duration/2)*0.03435
+distance=(duration/2)*0.03435; // take the distance between object and sensor
+if(distance<=10) // set the range
+{
+digitalWrite(redled,HIGH);
+lcd.clear();
+lcd.setCursor(0,0);
+lcd.print("stop");
+my_motor.write(90);
+}
+else if(bluetooth.available()>0) //checks the command if available or not from the terminal
+{
+
+c=bluetooth.read(); //read that command and assign it to c variable
+if(c=='$') //check the condition
+{
+lcd.clear();
+lcd.setCursor(3,0);
+lcd.print("you can go");
+Serial.println("go");
+lcd.setCursor(2,1);
+lcd.print("Happy Journey");
+digitalWrite(redled,LOW);
+my_motor.write(0);
+}
+}
+}
